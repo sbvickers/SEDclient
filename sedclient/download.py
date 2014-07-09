@@ -98,7 +98,7 @@ def reduce(raw, source):
             
         if not exclude:
             data = checkTypes(row.split(';'), conf['reduce']['types'].split())
-            #data = checkUnits(data, conf['reduce']['units'].split())
+            data = checkUnits(data, conf['reduce']['units'].split())
 
             return data
         
@@ -152,19 +152,32 @@ def checkUnits(data, units):
             A list of ufloats of the data:
     """
     from uncertainties import ufloat
+    from astropy import units as u
 
     dat = [d for d in data if type(d) == float]
     qua = [q for q in data if type(q) == str]
 
+    if len(qua) == 1:
+        qua = [q for q in qua]
+
+    units *= len(qua)
+
+    for i in range(len(units)):
+        dat[i] *= eval(units[i])
+        if dat[i].unit.is_equivalent(u.percent):
+            dat[i] = dat[i].decompose() * dat[i-1]
+
     redData = []
 
-    for i in range(len(dat) / 2):
-        redData.append(ufloat(dat[2*i],dat[2*i+1]))
-
-    print redData
+    for i in range(len(qua)):
+        if dat[2*i].unit.is_equivalent(dat[2*i+1]):
+            redData.append(ufloat(dat[2*i].value,dat[2*i+1].value) * dat[2*i].unit)
+        else:
+            pass
+            #logger.warning("Units for data point and the error do not correspond")
 
     if len(redData) == len(qua):
         print 'do some quality check'
         pass
     
-    return data
+    return redData
