@@ -107,7 +107,7 @@ def reduction(raw, source):
             
         if not exclude:
             data = checkTypes(row.split(';'), conf['reduce']['types'].split())
-            data = checkUnits(data, conf['reduce']['units'].split())
+            data = checkUnits(data, conf['reduce']['units'].split(), source)
 
             return data
         
@@ -142,7 +142,7 @@ def checkTypes(data, types):
 
     return data
 
-def checkUnits(data, units):
+def checkUnits(data, units, source):
     """
         Checks the 'units' of the survey and converts the data list into a list
         of ufloats.
@@ -154,6 +154,9 @@ def checkUnits(data, units):
 
             units : list
             A list of the units of each column of the data.
+
+            source : string
+            The name of the data source being reduced.
 
         Returns
         ----------
@@ -186,7 +189,48 @@ def checkUnits(data, units):
             #logger.warning("Units for data point and the error do not correspond")
 
     if len(redData) == len(qua):
-        print 'do some quality check'
-        pass
+        redData = qualCheck(redData, qua, source)
     
     return redData
+
+def qualCheck(data, qual, source):
+    """
+        Removes data points that don't fulfill the quality flag requirements.
+
+        Parameters
+        ----------
+                data : list of astropy.units ufloats
+                The list of the data points with errors and associated units.
+
+                qual : list
+                A list of the quality flags or signal-to-noise ratios.
+
+                source : string
+                The catalogue source.
+
+        Returns
+        ----------
+                data : list of astropy.units ufloats
+                Returns the list of data points with those points not satisfying
+                the requirements removed.
+    """
+
+    import numpy as np
+
+    conf = configparser.ConfigParser()
+    conf.read("config/{}.ini".format(source))
+
+    qualReq = conf['quality']['qual'].split()
+
+    if len(qualReq) > 1:
+        for qua in qual:
+            if qua not in qualReq:
+                index = qual.index(qua)
+                data[index] = np.nan
+    else:
+        for qua in qual:
+            if float(qua) < qual:
+                index = qual.index(qua)
+                data[index] = np.nan
+
+    return data
