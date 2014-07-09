@@ -7,6 +7,15 @@ def downPhoto(ra, dec):
         Downloads photometry from vizier
     """
 
+    for source in sources:
+        quer = queryParams(source, ra, dec)
+        result = query(q)
+        # save raw data
+        result = reduction(result, source)
+        # save reduced data
+
+    return result
+
 def queryParams(source, ra, dec):
     """
         Makes a dictionary with the query parameters.
@@ -64,7 +73,7 @@ def query(params):
 
     return output.split('\n')
 
-def reduce(raw, source):
+def reduction(raw, source):
     """
         Reduces the raw data list by removing all the associated crap.
 
