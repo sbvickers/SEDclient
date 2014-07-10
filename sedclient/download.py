@@ -1,20 +1,27 @@
 
 import subprocess
 import configparser
+import unitConversion as uc
 
 def downPhoto(ra, dec):
     """
         Downloads photometry from vizier
     """
+    sources = ['iras']
 
     for source in sources:
         quer = queryParams(source, ra, dec)
-        result = query(q)
+        result = query(quer)
         # save raw data
         fluxes, waves = reduction(result, source)
         # save reduced data
+        cgsFluxes = []
+        for f, w in zip(fluxes, waves):
+            cgsFluxes.append(uc.convert(f, w)) # need to add zero mag fluxes for mag data
 
-    return result
+        print waves, cgsFluxes
+
+    return waves, cgsFluxes
 
 def queryParams(source, ra, dec):
     """
