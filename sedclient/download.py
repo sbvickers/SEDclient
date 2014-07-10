@@ -2,6 +2,7 @@
 import subprocess
 import configparser
 import unitConversion as uc
+import dataSave as ds
 
 def downPhoto(ra, dec):
     """
@@ -12,15 +13,17 @@ def downPhoto(ra, dec):
     for source in sources:
         quer = queryParams(source, ra, dec)
         result = query(quer)
-        # save raw data
         fluxes, waves = reduction(result, source)
-        # save reduced data
-        cgsFluxes = []
-        for f, w in zip(fluxes, waves):
-            cgsFluxes.append(uc.convert(f, w)) # need to add zero mag fluxes for mag data
+        if fluxes:
+            cgsFluxes = []
 
-        print waves, cgsFluxes
-
+            for f, w in zip(fluxes, waves):
+                # need to add zero mag fluxes if mag data
+                cgsFluxes.append(uc.convert(f, w)) 
+        
+        # saving both raw and reduced data
+        # --ds.savePh(--raw--, --reduced--, --wavelengths--, --cat/survey--)
+        # ds.savePh(result, fluxes, waves, source)
     return waves, cgsFluxes
 
 def queryParams(source, ra, dec):
