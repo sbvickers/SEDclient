@@ -4,27 +4,52 @@ import configparser
 import unitConversion as uc
 import dataSave as ds
 
-def downPhoto(ra, dec):
+def downPhoto(ra, dec, source):
     """
         Downloads photometry from vizier
     """
-    sources = ['iras']
 
-    for source in sources:
-        quer = queryParams(source, ra, dec)
-        result = query(quer)
-        fluxes, waves = reduction(result, source)
-        if fluxes:
-            cgsFluxes = []
+    conf = configparser.ConfigParser()
+    conf.read("config/{}.ini".format(source))
 
-            for f, w in zip(fluxes, waves):
-                # need to add zero mag fluxes if mag data
-                cgsFluxes.append(uc.convert(f, w)) 
-        
-        # saving both raw and reduced data
-        # --ds.savePh(--raw--, --reduced--, --wavelengths--, --cat/survey--)
-        # ds.savePh(result, fluxes, waves, source)
+    quer = queryParams(source, ra, dec)
+    result = query(quer)
+    fluxes, waves, zeros = reduction(result, source)
+
+    if fluxes:
+        cgsFluxes = []
+
+        for f, w, z in zip(fluxes, waves, zeros):
+            cgsFluxes.append(uc.convert(f, w, z)) 
+    
+        ds.savePh(result, cgsfluxes, waves, source)
+    else:
+        # logger.info("no {} photometric data found for {}.".format(source, name)
+        return waves, None
+
     return waves, cgsFluxes
+
+def getZeroPoints(conf):
+    """
+        Gets the zero magnitude fluxes from the .ini file for the source.
+
+        Parameters
+        ----------
+                conf : configparser object
+                The configparser object for a specific source.
+
+        Returns
+        ----------
+                zeros : list of floats
+                The zero magnitude fluxes in Jansky's.
+    """
+
+    zeros = conf['reduce']['zero']
+
+    if zeros:
+        return [float(x) for x in zeros.split()]
+    else:
+        return [None] * len(conf['reduce']['wave'].split())
 
 def queryParams(source, ra, dec):
     """
@@ -118,11 +143,11 @@ def reduction(raw, source):
             
         if not exclude:
             data = checkTypes(row.split(';'), conf['reduce']['types'].split())
-            data, waves = checkUnits(data, conf['reduce']['units'].split(), source, waves)
+            data, waves, zeros = checkUnits(data, conf['reduce']['units'].split(), source, waves)
 
-            return data, waves
+            return data, waves, zeros
         
-    return None, waves
+    return None, waves, None
 
 def checkTypes(data, types):
     """
@@ -176,6 +201,12 @@ def checkUnits(data, units, source, waves):
         ----------
             data : list
             A list of ufloats of the data:
+
+            waves : list
+            List of the wavelengths of the data with invalid points removed.
+
+            zeros : list
+            List of the zero points of the data with invalid points removed.
     """
     from uncertainties import ufloat
     from astropy import units as u
@@ -203,9 +234,9 @@ def checkUnits(data, units, source, waves):
             #logger.warning("Units for data point and the error do not correspond")
 
     if len(redData) == len(qua):
-        redData, waves = qualCheck(redData, qua, source, waves)
+        redData, waves, zeros = qualCheck(redData, qua, source, waves)
     
-    return redData, waves
+    return redData, waves, zeros
 
 def qualCheck(data, qual, source, waves):
     """
@@ -230,12 +261,19 @@ def qualCheck(data, qual, source, waves):
                 data : list of astropy.units ufloats
                 Returns the list of data points with those points not satisfying
                 the requirements removed.
+
+                waves : list
+                List of wavelengths with invalid data removed.
+
+                zeros : list
+                List of zero points with invalid data removed.
     """
 
     conf = configparser.ConfigParser()
     conf.read("config/{}.ini".format(source))
 
     qualReq = conf['quality']['qual'].split()
+    zeros = getZeroPoints(conf)
 
     if len(qualReq) > 1:
         for qua in qual:
@@ -243,11 +281,15 @@ def qualCheck(data, qual, source, waves):
                 index = qual.index(qua)
                 data.pop(index)
                 waves.pop(index)
+                if zeros:
+                    zeros.pop(index)
     else:
         for qua in qual:
             if float(qua) < qual:
                 index = qual.index(qua)
                 data.pop(index)
                 waves.pop(index)
+                if zeros:
+                    zeros.pop(index)
 
-    return data, waves
+    return data, waves, zeros
