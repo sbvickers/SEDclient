@@ -215,8 +215,6 @@ def qualCheck(data, qual, source):
                 the requirements removed.
     """
 
-    import numpy as np
-
     conf = configparser.ConfigParser()
     conf.read("config/{}.ini".format(source))
 
@@ -226,11 +224,11 @@ def qualCheck(data, qual, source):
         for qua in qual:
             if qua not in qualReq:
                 index = qual.index(qua)
-                data[index] = np.nan
+                data.pop(index)
     else:
         for qua in qual:
             if float(qua) < qual:
                 index = qual.index(qua)
-                data[index] = np.nan
+                data.pop(index)
 
     return data
