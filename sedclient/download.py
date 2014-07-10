@@ -4,9 +4,28 @@ import configparser
 import unitConversion as uc
 import dataSave as ds
 
-def downPhoto(ra, dec, source):
+def downPh(ra, dec, source):
     """
-        Downloads photometry from vizier
+        Downloads photometry from vizier for a given cat/survey 'source'.
+
+        Parameters
+        ----------
+                ra : string
+                Right-ascension in 'HH MM SS.S' format.
+
+                dec : string
+                Declination in 'DD MM SS.S' format.
+
+                source : string
+                Name of the cat/survey to query.
+
+        Returns
+        ---------
+                waves : list
+                List of the wave lengths of the data points.
+
+                fluxes : list of astropy.units ufloats
+                The fluxes with corresponding units and uncertainties.
     """
 
     conf = configparser.ConfigParser()
@@ -28,6 +47,13 @@ def downPhoto(ra, dec, source):
         return waves, None
 
     return waves, cgsFluxes
+
+def downSp(ra, dec, source):
+    """
+        Downloads spectra from IRSA (ISO)
+        "http://irsa.ipac.caltech.edu/data/SWS/spectra/sws/{}_sws.txt"
+
+    """
 
 def getZeroPoints(conf):
     """
