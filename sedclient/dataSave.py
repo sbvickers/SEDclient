@@ -46,7 +46,7 @@ def savePh(raw, red, wave, source):
                 redEx = [y for x in red for y in (x.value.n, x.value.s)]
                 saveFile.write(redStr.format(*redEx))
 
-        # logger.info("{} data saved for {}.".format(f, name))
+        # logger.info("{} {} data saved for {}.".format(f, source, name))
         saveFile.close()
 
 def saveSp(flux, wave, source):
@@ -81,3 +81,19 @@ def saveSp(flux, wave, source):
 
         # logger.info("{} data saved for {}.".format(f, name))
         saveFile.close()
+
+def saveSed(fig):
+    """
+        Saves the image of an SED.
+
+        Parameters
+        ----------
+                fig : matplotlib figure object
+                The figure containing the SED to save.
+
+        Returns
+        ----------
+                None
+    """
+    fig.savefig("{}{}.eps".format(saveDirSed, name), figsize=(5,4), transparent=True, bbox_inches='tight')
+    # logger.info("SED for {} saved.".format(name))
