@@ -11,7 +11,7 @@ def downPhoto(ra, dec):
         quer = queryParams(source, ra, dec)
         result = query(q)
         # save raw data
-        result = reduction(result, source)
+        fluxes, waves = reduction(result, source)
         # save reduced data
 
     return result
@@ -95,7 +95,8 @@ def reduction(raw, source):
     conf.read("config/{}.ini".format(source))
 
     ex = ['#', '----'] + conf['reduce']['exclude'].split()
-
+    waves = [float(w) for w in conf['reduce']['wave'].split()]
+    
     for row in raw:
         exclude = False
         if (row):
@@ -107,11 +108,11 @@ def reduction(raw, source):
             
         if not exclude:
             data = checkTypes(row.split(';'), conf['reduce']['types'].split())
-            data = checkUnits(data, conf['reduce']['units'].split(), source)
+            data, waves = checkUnits(data, conf['reduce']['units'].split(), source, waves)
 
-            return data
+            return data, waves
         
-    return None
+    return None, waves
 
 def checkTypes(data, types):
     """
@@ -142,7 +143,7 @@ def checkTypes(data, types):
 
     return data
 
-def checkUnits(data, units, source):
+def checkUnits(data, units, source, waves):
     """
         Checks the 'units' of the survey and converts the data list into a list
         of ufloats.
@@ -157,6 +158,9 @@ def checkUnits(data, units, source):
 
             source : string
             The name of the data source being reduced.
+
+            waves : list
+            List of the wavelengths of the data.
 
         Returns
         ----------
@@ -189,11 +193,11 @@ def checkUnits(data, units, source):
             #logger.warning("Units for data point and the error do not correspond")
 
     if len(redData) == len(qua):
-        redData = qualCheck(redData, qua, source)
+        redData, waves = qualCheck(redData, qua, source, waves)
     
-    return redData
+    return redData, waves
 
-def qualCheck(data, qual, source):
+def qualCheck(data, qual, source, waves):
     """
         Removes data points that don't fulfill the quality flag requirements.
 
@@ -207,6 +211,9 @@ def qualCheck(data, qual, source):
 
                 source : string
                 The catalogue source.
+
+                waves : list
+                List of the wavelengths of the data.
 
         Returns
         ----------
@@ -225,10 +232,12 @@ def qualCheck(data, qual, source):
             if qua not in qualReq:
                 index = qual.index(qua)
                 data.pop(index)
+                waves.pop(index)
     else:
         for qua in qual:
             if float(qua) < qual:
                 index = qual.index(qua)
                 data.pop(index)
+                waves.pop(index)
 
-    return data
+    return data, waves
