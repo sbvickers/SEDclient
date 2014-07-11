@@ -53,7 +53,107 @@ def downSp(ra, dec, source):
         Downloads spectra from IRSA (ISO)
         "http://irsa.ipac.caltech.edu/data/SWS/spectra/sws/{}_sws.txt"
 
+        Parameters
+        ----------
+                ra : string
+                Right-ascension in 'HH MM SS.S' format.
+
+                dec : string
+                Declination in 'DD MM SS.S' format.
+
+                source : string
+                Name of the cat/survey to query.
+
+        Returns
+        ---------
+                waves : list
+                List of the wave lengths of the data points.
+
+                fluxes : list
+                The fluxes for the spectra.
     """
+    quer = queryParams(source, ra, dec)
+    result = query(quer)
+
+    TDT = getTDT(result)
+
+    if not TDT:
+        # logger.info("No ISO spectra found for {}".format(name))
+        return None, None
+
+    if len(TDT) != 8:
+        TDT = "0{}".format(TDT)
+
+    filename = "http://irsa.ipac.caltech.edu/data/SWS/spectra/sws/{}_sws.txt".format(TDT)
+
+    wave, flux = getISO(filename)
+    
+    ds.saveSp(wave, flux, source)
+
+    return wave, flux
+
+def getISO(filename):
+    """
+        Gets and formats the ISO spectra.
+
+        Parameters
+        ----------
+                filename : string
+                The URL of the ISO spectra to download.
+
+        Returns
+        ----------
+                wave : list
+                A list of wavelengths in microns.
+
+                flux : list of astropy.units ufloats
+                A list of the corresponding fluxes for the spectra.
+    """
+    import urllib2
+    from uncertainties import ufloat
+    from astropy import units as u
+
+    f = urllib2.urlopen(filename)
+    wave, flux = [], []
+
+    for line in f.readlines():
+        data = [value for value in line.split()]
+        if data[1] > 0:
+            wave.append(data[0] * u.um)
+            flux.append(uc.convert(ufloat(data[1], data[2]) * u.Jy, data[0]))
+
+    f.close()
+
+    return wave, flux
+
+def getTDT(result):
+    """
+        Gets the TDT ID for the SWS01 ISO spectra.
+
+        Parameters
+        ----------
+                result : list
+                A list of lines of output from the query.
+
+        Returns
+        ----------
+                TDT : string
+                The TDT ID for the SWS01 ISO spectra.
+    """
+    for res in result:
+        exclude = False
+        if (res):
+            for ele in ['#', '---', ' ', 'AOT']:
+                if ele in res.split(';')[0]:
+                    exclude = True
+        else:
+            exclude = True
+            
+        if not exclude:
+            if 'SWS01' in res.split(';')[0]:
+                return res.split(';')[1]
+
+    return None
 
 def getZeroPoints(conf):
     """
