@@ -41,7 +41,7 @@ def downPh(ra, dec, source):
         for f, w, z in zip(fluxes, waves, zeros):
             cgsFluxes.append(uc.convert(f, w, z)) 
     
-        ds.savePh(result, cgsfluxes, waves, source)
+        ds.savePh(result, cgsFluxes, waves, source)
     else:
         # logger.info("no {} photometric data found for {}.".format(source, name)
         return waves, None
