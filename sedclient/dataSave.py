@@ -1,6 +1,6 @@
 
 saveDirPh = "data/photometry/"
-saveDirSp = "data/spectroscopy/"
+saveDirSp = "../data/spectroscopy/"
 saveDirSed = "data/sed/"
 
 def savePh(raw, red, wave, source):
@@ -49,17 +49,17 @@ def savePh(raw, red, wave, source):
         # logger.info("{} {} data saved for {}.".format(f, source, name))
         saveFile.close()
 
-def saveSp(flux, wave, source):
+def saveSp(wave, flux, source):
     """
         Saves downloaded spectral data and saves in txt files.
 
         Parameters
         ----------
-                flux : list
-                A list of fluxes in erg/s/cm**2.
-
                 wave : list
                 A list of wavelengths of the data in microns.
+
+                flux : list
+                A list of fluxes in erg/s/cm**2.
 
                 source : string
                 The name of the cat/survey.
@@ -68,7 +68,8 @@ def saveSp(flux, wave, source):
         ----------
                 None
     """
-    files = ['iso', 'lrs']
+    name ='test'
+    files = ['iso']
 
     for f in files:
         # need to get name of object from somewhere
@@ -76,8 +77,10 @@ def saveSp(flux, wave, source):
 
         with open(filename, 'a') as saveFile:
             if flux:
-                fluxStr = "{:.3F}, {.3E} \n"
-                saveFile.write(fluxStr.format(*flux))
+                for w, f in zip(wave, flux):
+                    dataStr = "{:.3F}, {:.3E}, {:.3E} \n"
+                    data = [w.scale, f.value.n, f.value.s]
+                    saveFile.write(dataStr.format(*data))
 
         # logger.info("{} data saved for {}.".format(f, name))
         saveFile.close()
