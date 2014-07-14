@@ -85,6 +85,7 @@ def saveSed(fig, filename=None):
     """
     if filename:
         fig.savefig(filename, figsize=(5,4), transparent=True, bbox_inches='tight')
+        # logger.info("SED for {} saved as {}.".format(globs.name, filename))
     else:
-        fig.savefig("{}{}.eps".format(globs.dirSed, globs.name.replace(' ', '_')), figsize=(5,4), transparent=True, bbox_inches='tight')
-    # logger.info("SED for {} saved.".format(globs.name))
+        fig.savefig("{}{}.eps".format(globs.dirSed, globs.name.replace(' ', '_')), figsize=(5,4), transparent=False, bbox_inches='tight')
+        # logger.info("SED for {} saved.".format(globs.name))
