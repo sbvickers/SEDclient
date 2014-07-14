@@ -28,9 +28,13 @@ def loadPh(source):
 
     conf = configparser.ConfigParser()
     conf.read("{}{}_red".format(loadDirPh, name))
-
-    wave = [float(w) for w in conf[source]['wave'].split()]
-    fluxVec = [float(f) for f in conf[source]['red'].split()]
+    
+    try:
+        wave = [float(w) for w in conf[source]['wave'].split()]
+        fluxVec = [float(f) for f in conf[source]['red'].split()]
+    except KeyError as e:
+        # logger.info("No {} data found for {}.".format(source, name))
+        return None, None
 
     flux = fluxVec[0::2]
     e_flux = fluxVec[1::2]
@@ -76,3 +80,28 @@ def loadSp(source):
 
     return wave, flux
 
+def dataExists(dtype):
+    """
+        Checks if the data file for that object is available.
+
+        Parameters
+        ----------
+                dtype : string
+                Either 'ph' for photometry or 'sp' for spectroscopy.
+
+        Returns
+        ----------
+                exists : boolean
+                Returns True if file exists and False if not.
+    """
+    import os
+
+    if dtype == 'ph':
+        path = loadDirPh
+    elif dtype == 'sp':
+        path = loadDirSp
+    
+    if os.path.exists("{}{}_red".format(path, name)):
+        return True
+
+    return False
