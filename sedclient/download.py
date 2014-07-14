@@ -3,19 +3,14 @@ import subprocess
 import configparser
 import unitConversion as uc
 import dataSave as ds
+import globs
 
-def downPh(ra, dec, source):
+def downPh(source):
     """
         Downloads photometry from vizier for a given cat/survey 'source'.
 
         Parameters
         ----------
-                ra : string
-                Right-ascension in 'HH MM SS.S' format.
-
-                dec : string
-                Declination in 'DD MM SS.S' format.
-
                 source : string
                 Name of the cat/survey to query.
 
@@ -29,9 +24,9 @@ def downPh(ra, dec, source):
     """
 
     conf = configparser.ConfigParser()
-    conf.read("config/{}.ini".format(source))
+    conf.read("{}{}.ini".format(globs.confPath, source))
 
-    quer = queryParams(source, ra, dec)
+    quer = queryParams(source)
     result = query(quer)
     fluxes, waves, zeros = reduction(result, source)
 
@@ -41,26 +36,20 @@ def downPh(ra, dec, source):
         for f, w, z in zip(fluxes, waves, zeros):
             cgsFluxes.append(uc.convert(f, w, z)) 
     
-        ds.savePh(result, cgsFluxes, waves, source)
+        ds.savePh(cgsFluxes, waves, source)
     else:
         # logger.info("no {} photometric data found for {}.".format(source, name)
         return waves, None
 
     return waves, cgsFluxes
 
-def downSp(ra, dec, source):
+def downSp(source):
     """
         Downloads spectra from IRSA (ISO)
         "http://irsa.ipac.caltech.edu/data/SWS/spectra/sws/{}_sws.txt"
 
         Parameters
         ----------
-                ra : string
-                Right-ascension in 'HH MM SS.S' format.
-
-                dec : string
-                Declination in 'DD MM SS.S' format.
-
                 source : string
                 Name of the cat/survey to query.
 
@@ -72,7 +61,7 @@ def downSp(ra, dec, source):
                 fluxes : list
                 The fluxes for the spectra.
     """
-    quer = queryParams(source, ra, dec)
+    quer = queryParams(source)
     result = query(quer)
 
     TDT = getTDT(result)
@@ -177,7 +166,7 @@ def getZeroPoints(conf):
     else:
         return [None] * len(conf['reduce']['wave'].split())
 
-def queryParams(source, ra, dec):
+def queryParams(source):
     """
         Makes a dictionary with the query parameters.
 
@@ -187,12 +176,6 @@ def queryParams(source, ra, dec):
                 Name of the catalogue to query. Each survey/source has a .ini
                 file with the parameters for querying that survey/source.
 
-                ra : string
-                The right ascension of the object/region to query.
-
-                dec : string 
-                The declination of the object/region to query.
-
         Returns
         ---------
                 query : dictionary
@@ -201,15 +184,13 @@ def queryParams(source, ra, dec):
 
     query = {}
 
-    query['object'] = "{} {}".format(ra, dec)
+    query['object'] = "{} {}".format(globs.ra, globs.dec)
 
     conf = configparser.ConfigParser()
-    conf.read("config/{}.ini".format(source))
+    conf.read("{}{}.ini".format(globs.confPath, source))
 
     for par in ['source', 'radius', 'max', 'output']:
         query[par] = conf['query'][par]
-
-    # get rest of parameters from source .ini file
 
     return query
 
@@ -253,7 +234,7 @@ def reduction(raw, source):
     """
 
     conf = configparser.ConfigParser()
-    conf.read("config/{}.ini".format(source))
+    conf.read("{}{}.ini".format(globs.confPath, source))
 
     ex = ['#', '----'] + conf['reduce']['exclude'].split()
     waves = [float(w) for w in conf['reduce']['wave'].split()]
@@ -396,7 +377,7 @@ def qualCheck(data, qual, source, waves):
     """
 
     conf = configparser.ConfigParser()
-    conf.read("config/{}.ini".format(source))
+    conf.read("{}{}.ini".format(globs.confPath, source))
 
     qualReq = conf['quality']['qual'].split()
     zeros = getZeroPoints(conf)

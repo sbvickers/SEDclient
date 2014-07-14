@@ -1,17 +1,12 @@
 
-saveDirPh = "data/photometry/"
-saveDirSp = "../data/spectroscopy/"
-saveDirSed = "data/sed/"
+import globs
 
-def savePh(raw, red, wave, source):
+def savePh(red, wave, source):
     """
-        Saves downloaded data in both a raw and a reduced format.
+        Saves downloaded data in a reduced format.
 
         Parameters
         ----------
-                raw : list
-                A list of values, errors, and qflags.
-
                 red : list of astropy.units ufloats
                 A list of the fluxes with errors in erg/s/cm**2.
 
@@ -25,29 +20,21 @@ def savePh(raw, red, wave, source):
         ----------
                 None
     """
-    files = ['raw', 'red']
+    filename = "{}{}".format(globs.dirPh, globs.name.replace(' ', '_'))
 
-    for f in files:
-        # need to get name of object from somewhere
-        filename = "{}{}_{}".format(saveDirPh, name, f)
+    with open(filename, 'a') as saveFile:
+        saveFile.write("[{}] \n".format(source))
 
-        with open(filename, 'a') as saveFile:
-            saveFile.write("[{}] \n".format(source))
+        if red:
+            waveStr = "wave=" + "{} " * len(wave) + "\n"
+            saveFile.write(waveStr.format(*wave))
 
-            if raw and ('raw' in f):
-                rawStr = "raw=" + "{} " * len(raw) + "\n"
-                saveFile.write(rawStr.format(*raw))
+            redStr = "fluxes=" + "{:.3E} " * len(red) * 2 + "\n"
+            redEx = [y for x in red for y in (x.value.n, x.value.s)]
+            saveFile.write(redStr.format(*redEx))
 
-            if red and ('red' in f):
-                waveStr = "wave=" + "{} " * len(wave) + "\n"
-                saveFile.write(waveStr.format(*wave))
-
-                redStr = "red=" + "{:.3E} " * len(red) * 2 + "\n"
-                redEx = [y for x in red for y in (x.value.n, x.value.s)]
-                saveFile.write(redStr.format(*redEx))
-
-        # logger.info("{} {} data saved for {}.".format(f, source, name))
-        saveFile.close()
+    # logger.info("{} data saved for {}.".format(source, globs.name))
+    saveFile.close()
 
 def saveSp(wave, flux, source):
     """
@@ -68,24 +55,19 @@ def saveSp(wave, flux, source):
         ----------
                 None
     """
-    name ='test'
-    files = ['iso']
+    filename = "{}{}_iso".format(globs.dirSp, globs.name.replace(' ', '_'))
 
-    for f in files:
-        # need to get name of object from somewhere
-        filename = "{}{}_{}".format(saveDirSp, name, f)
+    with open(filename, 'a') as saveFile:
+        if flux:
+            for w, f in zip(wave, flux):
+                dataStr = "{:.3F}, {:.3E}, {:.3E} \n"
+                data = [w.scale, f.value.n, f.value.s]
+                saveFile.write(dataStr.format(*data))
 
-        with open(filename, 'a') as saveFile:
-            if flux:
-                for w, f in zip(wave, flux):
-                    dataStr = "{:.3F}, {:.3E}, {:.3E} \n"
-                    data = [w.scale, f.value.n, f.value.s]
-                    saveFile.write(dataStr.format(*data))
+    # logger.info("ISO data saved for {}.".format(globs.name))
+    saveFile.close()
 
-        # logger.info("{} data saved for {}.".format(f, name))
-        saveFile.close()
-
-def saveSed(fig):
+def saveSed(fig, filename=None):
     """
         Saves the image of an SED.
 
@@ -94,9 +76,15 @@ def saveSed(fig):
                 fig : matplotlib figure object
                 The figure containing the SED to save.
 
+                filename : string, optional
+                If filename is given SED is saved in that name.
+
         Returns
         ----------
                 None
     """
-    fig.savefig("{}{}.eps".format(saveDirSed, name), figsize=(5,4), transparent=True, bbox_inches='tight')
-    # logger.info("SED for {} saved.".format(name))
+    if filename:
+        fig.savefig(filename, figsize=(5,4), transparent=True, bbox_inches='tight')
+    else:
+        fig.savefig("{}{}.eps".format(globs.dirSed, globs.name.replace(' ', '_')), figsize=(5,4), transparent=True, bbox_inches='tight')
+    # logger.info("SED for {} saved.".format(globs.name))

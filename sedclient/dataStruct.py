@@ -1,18 +1,15 @@
 
 import load as dl
 import download as dw
+import globs
 
-def buildPhStruct(ra, dec):
+def buildPhStruct():
     """
         Builds and fills a dictionary of photometric data for the SED.
 
         Parameters
         ----------
-                ra : string
-                Right-ascension in 'HH MM SS.S' format.
-
-                dec : string
-                Declination in '+/-DD MM SS.S' format.
+                None
 
         Returns
         ----------
@@ -21,14 +18,14 @@ def buildPhStruct(ra, dec):
     """
     data = {}
 
-    if dl.dataExists('ph'):
-        data = loadSource(data, sources, dl.loadPh)
+    if dl.dataExists():
+        data = loadSource(data, dl.loadPh, globs.phSources)
     else:
-        data = downSource(data, sources, dw.downPh, ra, dec)
+        data = downSource(data, dw.downPh, globs.phSources)
 
     return data
 
-def loadSource(data, sources, func):
+def loadSource(data, func, sources):
     """
         Cycles through the sources and uses the given function to load either
         photometry or spectroscopy.
@@ -38,11 +35,11 @@ def loadSource(data, sources, func):
                 data : dictionary
                 The data dictionary.
 
-                sources : list
-                The list of cats/surveys to get data for.
-
                 func : function 
                 The function to used to load the data either loadPh or loadSp.
+
+                sources : list
+                List of the cats/surveys to query.
 
         Returns
         ----------
@@ -55,7 +52,7 @@ def loadSource(data, sources, func):
 
     return data
 
-def downSource(data, sources, func, ra, dec):
+def downSource(data, func, sources):
     """
         Cycles through the sources and uses the given function to download either
         photometry or spectroscopy.
@@ -65,11 +62,11 @@ def downSource(data, sources, func, ra, dec):
                 data : dictionary
                 The data dictionary.
 
-                sources : list
-                The list of cats/surveys to get data for.
-
                 func : function 
                 The function to used to download the data either downPh or downSp.
+
+                sources : list
+                List of cats/surveys to query.
 
         Returns
         ----------
@@ -78,21 +75,17 @@ def downSource(data, sources, func, ra, dec):
     """
     for source in sources:
         currData = data[source] = {}
-        currData['wave'], currData['flux'] = func(ra, dec, source)
+        currData['wave'], currData['flux'] = func(source)
 
     return data
 
-def buildSpStruct(ra, dec):
+def buildSpStruct():
     """
         Builds and fills a dictionary of spectroscopic data for the SED.
 
         Parameters
         ----------
-                ra : string
-                Right-ascension in 'HH MM SS.S' format.
-
-                dec : string
-                Declination in '+/-DD MM SS.S' format.
+                None
 
         Returns
         ----------
@@ -101,9 +94,9 @@ def buildSpStruct(ra, dec):
     """
     data = {}
 
-    if dl.dataExists('sp'):
-        data = loadSource(data, sources, dl.loadSp)
+    if dl.dataExists('iso'):
+        data = loadSource(data, dl.loadSp, globs.specSources)
     else:
-        data = downSource(data, sources, dw.downSp, ra, dec)
+        data = downSource(data, dw.downSp, globs.specSources)
 
     return data

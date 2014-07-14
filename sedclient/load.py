@@ -2,10 +2,7 @@
 import configparser
 from astropy import units as u
 from uncertainties import ufloat 
-
-loadDirPh = "data/photometry/"
-loadDirSp = "data/spectroscopy/"
-loadDirSed = "data/sed/"
+import globs
 
 def loadPh(source):
     """
@@ -27,7 +24,7 @@ def loadPh(source):
     """
 
     conf = configparser.ConfigParser()
-    conf.read("{}{}_red".format(loadDirPh, name))
+    conf.read("{}{}".format(globs.dirPh, globs.name.replace(' ', '_')))
     
     try:
         wave = [float(w) for w in conf[source]['wave'].split()]
@@ -69,7 +66,7 @@ def loadSp(source):
 
     wave, flux = [], []
 
-    with open("{}{}_{}".format(loadDirSp, name, source), 'r') as f:
+    with open("{}{}_{}".format(globs.dirSp, globs.name.replace(' ', '_'), source), 'r') as f:
         reader = csv.reader(f)
         for row in reader:
             wave.append(float(row[0]))
@@ -80,14 +77,14 @@ def loadSp(source):
 
     return wave, flux
 
-def dataExists(dtype):
+def dataExists(source=None):
     """
         Checks if the data file for that object is available.
 
         Parameters
         ----------
-                dtype : string
-                Either 'ph' for photometry or 'sp' for spectroscopy.
+                source : string, optional
+                If a spectra then source is not None
 
         Returns
         ----------
@@ -96,12 +93,12 @@ def dataExists(dtype):
     """
     import os
 
-    if dtype == 'ph':
-        path = loadDirPh
-    elif dtype == 'sp':
-        path = loadDirSp
+    if not source:
+        path = "{}{}".format(globs.dirPh, globs.name.replace(' ','_'))
+    elif source:
+        path = "{}{}_{}".format(globs.dirSp, globs.name.replace(' ','_'), source)
     
-    if os.path.exists("{}{}_red".format(path, name)):
+    if os.path.exists(path):
         return True
 
     return False
