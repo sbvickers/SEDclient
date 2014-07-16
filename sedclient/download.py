@@ -251,6 +251,7 @@ def reduction(raw, source):
         if not exclude:
             data = checkTypes(row.split(';'), conf['reduce']['types'].split())
             data, waves, zeros = checkUnits(data, conf['reduce']['units'].split(), source, waves)
+            print data
 
             return data, waves, zeros
         
@@ -322,7 +323,7 @@ def checkUnits(data, units, source, waves):
     qua = [q for q in data if type(q) == str]
 
     if len(qua) == 1:
-        qua = [q for q in qua]
+        qua = [q for q in qua[0]]
 
     units *= len(qua)
 
