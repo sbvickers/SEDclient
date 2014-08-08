@@ -1,3 +1,8 @@
+"""
+    This module loads the data from files stored in the
+    ../data/(photometry/spectroscopy) directory if a file exists for the
+    requested object.
+"""
 
 import configparser
 from astropy import units as u

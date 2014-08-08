@@ -1,3 +1,7 @@
+"""
+    This module is designed to convert spectral flux densities and magnitudes
+    into spectral flux densities in cgs units i.e. erg/s/cm^2.
+"""
 
 from astropy import units as u
 

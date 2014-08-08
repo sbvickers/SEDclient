@@ -1,3 +1,8 @@
+"""
+    Here the data is written to files in the ../data/(photometry or
+    spectroscopy) directories where the filename is the name of the object i.e.
+    globs.name.
+"""
 
 import globs
 

@@ -1,3 +1,8 @@
+"""
+    This module is where the downloading of the photometry and spectroscopy
+    happens. This module also checks the data against quality flags and returns
+    the data in cgs spectral flux density.
+"""
 
 import subprocess
 import configparser

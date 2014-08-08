@@ -1,3 +1,8 @@
+"""
+    These are global variables accessible from anywhere in the client by
+    prefacing the variables listed below with globs.name, provided that this
+    file has been imported.
+"""
 import logging
 
 name = None

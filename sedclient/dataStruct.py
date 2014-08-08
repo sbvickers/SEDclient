@@ -1,3 +1,10 @@
+"""
+    This module builds the data structure that houses the photometry and
+    spectroscopy data. The data structure is a dictionary of photometric surveys
+    i.e. data['iras'] where data['iras'] is a dictionary of wavelengths and
+    fluxes i.e. data['iras'] has data['iras']['waves'] and
+    data['iras']['fluxes'] which are lists of wavelengths and fluxes.
+"""
 
 import load as dl
 import download as dw
