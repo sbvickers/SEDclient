@@ -251,7 +251,6 @@ def reduction(raw, source):
         if not exclude:
             data = checkTypes(row.split(';'), conf['reduce']['types'].split())
             data, waves, zeros = checkUnits(data, conf['reduce']['units'].split(), source, waves)
-            print data
 
             return data, waves, zeros
         
@@ -325,7 +324,10 @@ def checkUnits(data, units, source, waves):
     if len(qua) == 1:
         qua = [q for q in qua[0]]
 
-    units *= len(qua)
+    if qua:
+        units *= len(qua)
+    else:
+        units *= len(dat) / 2
 
     for i in range(len(units)):
         dat[i] *= eval(units[i])
@@ -334,7 +336,7 @@ def checkUnits(data, units, source, waves):
 
     redData = []
 
-    for i in range(len(qua)):
+    for i in range(len(dat)/2):
         if dat[2*i].unit.is_equivalent(dat[2*i+1]):
             redData.append(ufloat(dat[2*i].value,dat[2*i+1].value) * dat[2*i].unit)
         else:
@@ -342,6 +344,8 @@ def checkUnits(data, units, source, waves):
             #logger.warning("Units for data point and the error do not correspond")
 
     if len(redData) == len(qua):
+        redData, waves, zeros = qualCheck(redData, qua, source, waves)
+    elif not qua:
         redData, waves, zeros = qualCheck(redData, qua, source, waves)
     
     return redData, waves, zeros
@@ -384,16 +388,18 @@ def qualCheck(data, qual, source, waves):
     zeros = getZeroPoints(conf)
 
     if len(qualReq) > 1:
-        for qua in qual:
+        for qua in reversed(qual):
             if qua not in qualReq:
                 index = qual.index(qua)
                 data.pop(index)
                 waves.pop(index)
                 if zeros:
                     zeros.pop(index)
+    elif len(qualReq) == 0:
+        return data, waves, zeros
     else:
-        for qua in qual:
-            if float(qua) < qual:
+        for qua in reversed(qual):
+            if float(qua) < float(qualReq[0]):
                 index = qual.index(qua)
                 data.pop(index)
                 waves.pop(index)
