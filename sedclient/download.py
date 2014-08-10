@@ -38,8 +38,10 @@ def downPh(source):
     if fluxes:
         cgsFluxes = []
 
+        import numpy as np
         for f, w, z in zip(fluxes, waves, zeros):
-            cgsFluxes.append(uc.convert(f, w, z)) 
+            if not np.isnan(f.value.n):
+                cgsFluxes.append(uc.convert(f, w, z)) 
     
         ds.savePh(cgsFluxes, waves, source)
     else:

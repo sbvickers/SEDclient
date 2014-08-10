@@ -31,8 +31,8 @@ class Plot:
         self.ax.set_xscale('log')
         self.ax.set_yscale('log')
 
-        self.ax.set_xticks([0.1, 1.0, 10.0, 100.0, 1000.0], ['$0.1$', '$1$', '$10$', '$100$', '$1000$'])
         self.ax.set_xlim([0.1, 1000.0])
+        self.ax.set_xticklabels(['', '$0.1$', '$1$', '$10$', '$100$', '$1000$'])
 
     def plotPh(self):
         """
@@ -49,7 +49,10 @@ class Plot:
             if self.photo[survey]['flux']:
                 wave = self.photo[survey]['wave']
                 flux = [f for x in self.photo[survey]['flux'] for f in (x.value.n, x.value.s)]
-                self.ax.errorbar(wave, flux[0::2], yerr=flux[1::2], fmt=conf['marker'], mfc=conf['mfc'], mec=conf['mec'], ecolor=conf['mfc'], label=conf['label'])
+                if 'white' not in conf['mfc']:
+                    self.ax.errorbar(wave, flux[0::2], yerr=flux[1::2], fmt=conf['marker'], mfc=conf['mfc'], mec=conf['mec'], ecolor=conf['mfc'], label=conf['label'])
+                else:
+                    self.ax.errorbar(wave, flux[0::2], yerr=flux[1::2], fmt=conf['marker'], mfc=conf['mfc'], mec=conf['mec'], ecolor=conf['mec'], label=conf['label'])
 
     def plotSp(self):
         """

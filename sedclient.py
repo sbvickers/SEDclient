@@ -24,8 +24,8 @@ def main():
     SED.plotSp()
     SED.annotate(globs.name)
     SED.legend()
-    SED.show()
     SED.saveSed()
+    SED.show()
 
     globs.logger.removeHandler(objectHandler)
 

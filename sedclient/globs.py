@@ -15,7 +15,7 @@ dirSed = "data/sed/"
 dirLog = "data/logfiles/"
 masterLog = "master.log"
 
-phSources=['2mass', 'iras', 'wise', 'akari_irc', 'mcps']
+phSources=['2mass', 'iras', 'wise', 'akari_irc', 'mcps', 'apass', 'lmcps', 'sage-irac', 'VIlmc', 'denis', 'tycho2']
 specSources=['iso']
 
 confPath = "sedclient/config/"
