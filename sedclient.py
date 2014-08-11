@@ -2,34 +2,21 @@
 
 from sedclient import sedPlot
 from sedclient import globs
+from sedclient import makeSED
 
 def main():
     """
         testing function
     """
-    globs.name = 'ddd'
-    globs.ra = '00 53 10.17'
-    globs.dec = '-72 29 20.8'
+    globs.name = 'cw leo'
+    globs.ra = '09 47 57.246'
+    globs.dec = '+13 16 43.64'
+    globs.l = 122.0483
+    globs.b = -4.5325
+    from uncertainties import ufloat
+    globs.ebv = ufloat(0.04,0.01)
 
-    objectHandler = globs.logging.FileHandler("{}{}.log".format(globs.dirLog, globs.name.replace(' ', '_')))
-    objectHandler.setLevel(globs.logging.DEBUG)
-    objectHandler.setFormatter(fmt=globs.logFormat)
-
-    globs.logger.addHandler(objectHandler)
-
-    globs.logger.info('hello this is a test')
-    
-    SED = sedPlot.Plot()
-    SED.plotPh()
-    SED.plotSp()
-    SED.annotate(globs.name)
-    SED.legend()
-    SED.saveSed()
-    SED.show()
-
-    globs.logger.removeHandler(objectHandler)
-
-    globs.logger.warning('test of the warning system')
+    makeSED.make()
 
 if __name__ == '__main__':
     main()

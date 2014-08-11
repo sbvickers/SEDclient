@@ -336,6 +336,8 @@ def checkUnits(data, units, source, waves):
     else:
         units *= len(dat) / 2
 
+    units = [str(un) for un in units]
+
     for i in range(len(units)):
         dat[i] *= eval(units[i])
         if dat[i].unit.is_equivalent(u.percent):
@@ -345,10 +347,10 @@ def checkUnits(data, units, source, waves):
 
     for i in range(len(dat)/2):
         if dat[2*i].unit.is_equivalent(dat[2*i+1]):
-            redData.append(ufloat(dat[2*i].value,dat[2*i+1].value) * dat[2*i].unit)
+            redData.append(ufloat(dat[2*i].value,dat[2*i+1].to(dat[2*i].unit).value) * dat[2*i].unit)
         else:
-            pass
             #logger.warning("Units for data point and the error do not correspond")
+            pass
 
     if len(redData) == len(qua):
         redData, waves, zeros = qualCheck(redData, qua, source, waves)

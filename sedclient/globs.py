@@ -8,6 +8,9 @@ import logging
 name = None
 ra = None
 dec = None
+ebv = None
+l = None
+b = None
 
 dirPh = "data/photometry/"
 dirSp = "data/spectroscopy/"
@@ -15,7 +18,7 @@ dirSed = "data/sed/"
 dirLog = "data/logfiles/"
 masterLog = "master.log"
 
-phSources=['2mass', 'iras', 'wise', 'akari_irc', 'mcps', 'apass', 'lmcps', 'sage-irac', 'VIlmc', 'denis', 'tycho2']
+phSources=['2mass', 'iras', 'wise', 'akari_irc', 'mcps', 'apass', 'lmcps', 'sage-irac', 'VIlmc', 'denis', 'tycho2', 'galex', 'sdss']
 specSources=['iso']
 
 confPath = "sedclient/config/"
@@ -31,3 +34,4 @@ masterHandler.setFormatter(fmt=logFormat)
 
 logger.addHandler(masterHandler)
 
+objectHandler = None
