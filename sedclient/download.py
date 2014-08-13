@@ -41,8 +41,12 @@ def downPh(source):
         import numpy as np
         for f, w, z in zip(fluxes, waves, zeros):
             if not np.isnan(f.value.n):
-                cgsFluxes.append(uc.convert(f, w, z)) 
-    
+                if uc.convert(f, w, z).value.n > uc.convert(f, w, z).value.s:
+                    cgsFluxes.append(uc.convert(f, w, z)) 
+                else:
+                    waves.pop(waves.index(w))
+                    zeros.pop(zeros.index(z))
+
         ds.savePh(cgsFluxes, waves, source)
     else:
         # logger.info("no {} photometric data found for {}.".format(source, name)
