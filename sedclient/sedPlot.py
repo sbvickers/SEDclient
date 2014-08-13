@@ -62,7 +62,7 @@ class Plot:
 
         for survey in self.spec:
             conf = configparser.ConfigParser()
-            conf.read("{}{}.ini".format(globs.confPath, survey))
+            conf.read("{}spec/{}.ini".format(globs.confPath, survey))
 
             conf = conf['plot']
 

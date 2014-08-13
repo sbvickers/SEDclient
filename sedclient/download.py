@@ -72,7 +72,7 @@ def downSp(source):
                 fluxes : list
                 The fluxes for the spectra.
     """
-    quer = queryParams(source)
+    quer = queryParams("spec/" + source)
     result = query(quer)
 
     TDT = getTDT(result)

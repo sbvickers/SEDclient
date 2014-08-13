@@ -4,6 +4,7 @@
     file has been imported.
 """
 import logging
+import os
 
 name = None
 ra = None
@@ -17,11 +18,10 @@ dirSp = "data/spectroscopy/"
 dirSed = "data/sed/"
 dirLog = "data/logfiles/"
 masterLog = "master.log"
-
-phSources=['2mass', 'iras', 'wise', 'akari_irc', 'mcps', 'apass', 'lmcps', 'sage-irac', 'VIlmc', 'denis', 'tycho2', 'galex', 'sdss']
-specSources=['iso']
-
 confPath = "sedclient/config/"
+
+phSources = [f.replace('.ini', '') for f in os.listdir(confPath) if os.path.isfile(os.path.join(confPath, f))]
+specSources=['iso']
 
 logFormat = logging.Formatter("%(asctime)-15s ; %(levelname)s ; Mod: %(module)-5s ; LN: %(lineno)d ; %(message)s", "%Y-%m-%d %H:%M:%S")
 
