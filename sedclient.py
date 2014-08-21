@@ -8,9 +8,9 @@ def main():
     """
         testing function
     """
-    globs.name = 'clover'
-    globs.ra = '19 49 54.91'
-    globs.dec = '+24 08 53.30'
+    globs.name = 'minkowski'
+    globs.ra = '19 36 18.91'
+    globs.dec = '+29 32 50.03'
     globs.l = 122.0483
     globs.b = -4.5325
     from uncertainties import ufloat

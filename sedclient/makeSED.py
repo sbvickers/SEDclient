@@ -43,7 +43,8 @@ def make():
 
 def makeAnns():
     """
-        Prepares the strings for the Annotations.
+        Prepares the strings for the Annotations. Takes no arguments as the data
+        are taken from the globs module.
 
         Parameters
         ----------
@@ -51,7 +52,9 @@ def makeAnns():
 
         Returns
         ----------
-                None
+                Anns : list of strings
+                The list of the strings that are to be annotated on the plot
+                area.
     """
     annotations = []
 

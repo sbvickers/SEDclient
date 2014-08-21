@@ -38,7 +38,8 @@ def savePh(red, wave, source):
             redEx = [y for x in red for y in (x.value.n, x.value.s)]
             saveFile.write(redStr.format(*redEx))
 
-    # logger.info("{} data saved for {}.".format(source, globs.name))
+    globs.logger.info("{} data saved for {}.".format(source, globs.name))
+
     saveFile.close()
 
 def saveSp(wave, flux, source):
@@ -69,7 +70,8 @@ def saveSp(wave, flux, source):
                 data = [w.scale, f.value.n, f.value.s]
                 saveFile.write(dataStr.format(*data))
 
-    # logger.info("ISO data saved for {}.".format(globs.name))
+    globs.logger.info("ISO data saved for {}.".format(globs.name))
+
     saveFile.close()
 
 def saveSed(fig, filename=None):
@@ -90,7 +92,7 @@ def saveSed(fig, filename=None):
     """
     if filename:
         fig.savefig(filename, figsize=(5,4), transparent=True, bbox_inches='tight')
-        # logger.info("SED for {} saved as {}.".format(globs.name, filename))
+        globs.logger.info("SED for {} saved as {}.".format(globs.name, filename))
     else:
         fig.savefig("{}{}.eps".format(globs.dirSed, globs.name.replace(' ', '_')), figsize=(5,4), transparent=False, bbox_inches='tight')
-        # logger.info("SED for {} saved.".format(globs.name))
+        globs.logger.info("SED for {} saved.".format(globs.name))

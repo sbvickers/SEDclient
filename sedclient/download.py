@@ -9,6 +9,10 @@ import configparser
 import unitConversion as uc
 import dataSave as ds
 import globs
+from uncertainties import ufloat
+from astropy import units as u
+import deredden as dr
+import numpy as np
 
 def downPh(source):
     """
@@ -33,26 +37,80 @@ def downPh(source):
 
     quer = queryParams(source)
     result = query(quer)
-    fluxes, waves, zeros = reduction(result, source)
 
-    if fluxes:
-        cgsFluxes = []
+    kwargs = build_kwargs(result, conf)
 
-        import numpy as np
-        for f, w, z in zip(fluxes, waves, zeros):
-            if not np.isnan(f.value.n):
-                if uc.convert(f, w, z).value.n > uc.convert(f, w, z).value.s:
-                    cgsFluxes.append(uc.convert(f, w, z)) 
-                else:
-                    waves.pop(waves.index(w))
-                    zeros.pop(zeros.index(z))
+    kwargs = reduction(**kwargs)
 
-        ds.savePh(cgsFluxes, waves, source)
-    else:
-        # logger.info("no {} photometric data found for {}.".format(source, name)
-        return waves, None
+    steps = [checkTypes, checkUnits, qualCheck, convertFluxes]
 
-    return waves, cgsFluxes
+    if kwargs['fluxes']:
+        for step in steps:
+            kwargs = step(**kwargs)
+
+        kwargs['fluxes'] = list(dr.dered(kwargs['wave'], kwargs['fluxes'], globs.ebv))
+
+        debugPrint(source, **kwargs)
+
+        ds.savePh(kwargs['fluxes'], kwargs['wave'], source)
+
+        return kwargs['wave'], kwargs['fluxes']
+
+    globs.logger.info("no {} photometric data found for {}.".format(source, name))
+
+    return None, None
+
+
+def debugPrint(source, **kwargs):
+    """
+        A simple print statement to print the reduced and corrected data for
+        each source.
+
+        Parameters
+        ----------
+                source : string
+                Name of survey/cat that has been queried.
+
+                **kwargs : dictionary 
+                A dictionary of parameters required to reduce the data.
+    """
+    print( "converted and reddened corrected fluxes for {}".format(source) )
+    for w,f in zip(kwargs['wave'], kwargs['fluxes']):
+        print( "wave = ", w, "um \t flux = ", f )
+
+
+def build_kwargs(data, conf):
+    """
+        Builds a dictionary of kwargs to be used in the data reduction process.
+
+        Parameters
+        ----------
+                data list
+                A list of the requested data in raw form.
+
+                conf : configparser
+                The configparser object for a particular survey.
+
+        Returns
+        ----------
+                kwargs : dictionary
+                Dictionary of objects required to reduce the data.
+    """
+
+    kwargs = {}
+
+    red_conf = conf['reduce']
+
+    keys = ['wave', 'zero', 'units', 'types', 'exclude']
+    val_types = [float, float, eval, eval, str]
+
+    for key, val_type in zip(keys, val_types):
+        kwargs[key] = [val_type(val) for val in red_conf[key].split()]
+
+    kwargs['qualReq'] = conf['quality']['qual'].split()
+    kwargs['fluxes'] = data
+
+    return kwargs
 
 def downSp(source):
     """
@@ -88,6 +146,8 @@ def downSp(source):
 
     wave, flux = getISO(filename)
     
+    flux = list(dr.dered(wave, flux, globs.ebv))
+
     ds.saveSp(wave, flux, source)
 
     return wave, flux
@@ -110,8 +170,6 @@ def getISO(filename):
                 A list of the corresponding fluxes for the spectra.
     """
     import urllib2
-    from uncertainties import ufloat
-    from astropy import units as u
 
     f = urllib2.urlopen(filename)
     wave, flux = [], []
@@ -154,28 +212,6 @@ def getTDT(result):
                 return res.split(';')[1]
 
     return None
-
-def getZeroPoints(conf):
-    """
-        Gets the zero magnitude fluxes from the .ini file for the source.
-
-        Parameters
-        ----------
-                conf : configparser object
-                The configparser object for a specific source.
-
-        Returns
-        ----------
-                zeros : list of floats
-                The zero magnitude fluxes in Jansky's.
-    """
-
-    zeros = conf['reduce']['zero']
-
-    if zeros:
-        return [float(x) for x in zeros.split()]
-    else:
-        return [None] * len(conf['reduce']['wave'].split())
 
 def queryParams(source):
     """
@@ -226,197 +262,249 @@ def query(params):
 
     return output.split('\n')
 
-def reduction(raw, source):
+def reduction(**kwargs):
     """
         Reduces the raw data list by removing all the associated crap.
 
         Parameters
         ----------
-                raw : list
-                A list of the lines of data returned from the query.
-
-                source : string
-                The name of the data source being reduced.
+                kwargs : dictionary
+                Dictionary of objects required to reduce the data.
 
         Returns
         ----------
-                data : list
-                A list of the requested data columns.
+                kwargs : dictionary
+                Dictionary of objects required to reduce the data.
     """
+    kwargs['exclude'] += ['#', '---']
 
-    conf = configparser.ConfigParser()
-    conf.read("{}{}.ini".format(globs.confPath, source))
-
-    ex = ['#', '----'] + conf['reduce']['exclude'].split()
-    waves = [float(w) for w in conf['reduce']['wave'].split()]
-    
-    for row in raw:
-        exclude = False
-        if (row):
-            for ele in ex:
+    for row in kwargs['fluxes']:
+        exBool = False
+        if row:
+            for ele in kwargs['exclude']:
                 if ele in row.split(';')[0]:
-                    exclude = True
+                    exBool = True
         else:
-            exclude = True
-            
-        if not exclude:
-            data = checkTypes(row.split(';'), conf['reduce']['types'].split())
-            data, waves, zeros = checkUnits(data, conf['reduce']['units'].split(), source, waves)
+            exBool = True
 
-            return data, waves, zeros
-        
-    return None, waves, None
+        if not exBool:
+            kwargs['fluxes'] = row.split(';')
+            return kwargs
+        else:
+            kwargs['fluxes'] = None
 
-def checkTypes(data, types):
+    return kwargs
+
+def checkTypes(**kwargs):
     """
         Converts each element of the data list into the required data type.
 
         Parameters
         ----------
-                data : list
-                A list of the data from the query.
-
-                types : list
-                A list of the data types for each column of data.
+                kwargs : dictionary
+                Dictionary of objects required to reduce the data.
 
         Returns
         ----------
-                data : list
-                A list of the data in the correct data type.
+                kwargs : dictionary
+                Dictionary of objects required to reduce the data.
     """
     import numpy as np
-    
-    typeDict = {'int':int, 'float':float, 'string':str}
 
-    for i in range(len(data)):
-        if data[i].strip() == '':
-            data[i] = np.nan
+    data = kwargs['fluxes']
+    types = kwargs['types']
+
+    for i in range(0, len(kwargs['fluxes'])):
+        if kwargs['fluxes'][i].strip() == '':
+            kwargs['fluxes'][i] = np.nan
         else:
-            data[i] = typeDict[types[i]](data[i])
+            kwargs['fluxes'][i] = kwargs['types'][i](kwargs['fluxes'][i])
 
-    return data
+    return kwargs
 
-def checkUnits(data, units, source, waves):
+def get_qual(data):
+    """
+        Extracts the quality flag(s) from the data list.
+
+        Parameters
+        ----------
+                data : list
+                The list of the data returned from the query.
+
+        Returns
+        ----------
+                qua : list
+                A list of the quality flags if any exist.
+    """
+    qua = [q for q in data if type(q) == str]
+
+    # for 2mass quality flag
+    if len(qua) == 1:
+        qua = [q for q in qua[0]]
+
+    return qua
+
+def checkUnits(**kwargs):
     """
         Checks the 'units' of the survey and converts the data list into a list
         of ufloats.
 
         Parameters
         ----------
-            data : list
-            A list of the data columns requested during the query.
-
-            units : list
-            A list of the units of each column of the data.
-
-            source : string
-            The name of the data source being reduced.
-
-            waves : list
-            List of the wavelengths of the data.
+                kwargs : dictionary
+                Dictionary of objects required to reduce the data.
 
         Returns
         ----------
-            data : list
-            A list of ufloats of the data:
-
-            waves : list
-            List of the wavelengths of the data with invalid points removed.
-
-            zeros : list
-            List of the zero points of the data with invalid points removed.
+                kwargs : dictionary
+                Dictionary of objects required to reduce the data.
     """
-    from uncertainties import ufloat
-    from astropy import units as u
+    kwargs['qua'] = get_qual(kwargs['fluxes'])
+    kwargs['fluxes'] = [d for d in kwargs['fluxes'] if type(d) == float]
 
-    dat = [d for d in data if type(d) == float]
-    qua = [q for q in data if type(q) == str]
+    fluxes = kwargs['fluxes']
+    units = kwargs['units']
 
-    if len(qua) == 1:
-        qua = [q for q in qua[0]]
-
-    if qua:
-        units *= len(qua)
-    else:
-        units *= len(dat) / 2
-
-    units = [str(un) for un in units]
-
-    for i in range(len(units)):
-        dat[i] *= eval(units[i])
-        if dat[i].unit.is_equivalent(u.percent):
-            dat[i] = dat[i].decompose() * dat[i-1]
-
-    redData = []
-
-    for i in range(len(dat)/2):
-        if dat[2*i].unit.is_equivalent(dat[2*i+1]):
-            redData.append(ufloat(dat[2*i].value,dat[2*i+1].to(dat[2*i].unit).value) * dat[2*i].unit)
+    if len(units) == 1:
+        if units[0].is_equvalent(u.mag):
+            p_data = [0.1 for d in fluxes] 
         else:
-            #logger.warning("Units for data point and the error do not correspond")
-            pass
+            p_data = [0.1 * d for d in fluxes]
 
-    if len(redData) == len(qua):
-        redData, waves, zeros = qualCheck(redData, qua, source, waves)
-    elif not qua:
-        redData, waves, zeros = qualCheck(redData, qua, source, waves)
-    
-    return redData, waves, zeros
+        fluxes = [y for x in zip(fluxes, p_data) for y in x]
+        units *= len(fluxes)
+    elif len(units) == 2:
+        if units[1].is_equivalent(u.percent):
+            for i in range(1, len(units)*len(fluxes)/2, 2):
+                fluxes[i] = (fluxes[i] / 100) * fluxes[i-1]
+            units = [units[0]] * 2
 
-def qualCheck(data, qual, source, waves):
+        units *= len(fluxes) / 2
+
+    fluxes = [x*y for x, y in zip(fluxes, units)]
+
+    blendZip = zip(fluxes[0::2], fluxes[1::2])
+    fluxes = [equiv_unit(val, err) for val, err in blendZip if equiv_unit(val, err)]
+
+    kwargs['fluxes'] = fluxes
+    kwargs['units'] = units
+
+    return kwargs
+
+def equiv_unit(val, err):
+    """
+        Compares the units of the value and its error and returns a ufloat
+        combining the value and its error and the units if the units are
+        equivalent otherwise returns false.
+
+        Parameters
+        ----------
+                val : float + astropy.units
+                The value of the datum with its units.
+
+                err : float + astropy.units
+                The error of the datum with its units.
+
+        Returns
+        ----------
+                ufloat 
+                Returns ufloat of the datum if units are equivalent otherwise
+                will logger warning and return None.
+    """
+    if val.unit.is_equivalent(err):
+        return ufloat(val.value, err.to(val.unit).value) * val.unit
+
+    globs.logger.warning("Units for data point and the error do not correspond")
+
+    return None
+
+def qualCheck(**kwargs):
     """
         Removes data points that don't fulfill the quality flag requirements.
 
         Parameters
         ----------
-                data : list of astropy.units ufloats
-                The list of the data points with errors and associated units.
-
-                qual : list
-                A list of the quality flags or signal-to-noise ratios.
-
-                source : string
-                The catalogue source.
-
-                waves : list
-                List of the wavelengths of the data.
+                kwargs : dictionary
+                A dictionary of the parameters used in the reduction of the
+                data.
 
         Returns
         ----------
-                data : list of astropy.units ufloats
-                Returns the list of data points with those points not satisfying
-                the requirements removed.
-
-                waves : list
-                List of wavelengths with invalid data removed.
-
-                zeros : list
-                List of zero points with invalid data removed.
+                kwargs : dictionary
+                A dictionary of the parameters used in the reduction of the
+                data.
     """
 
-    conf = configparser.ConfigParser()
-    conf.read("{}{}.ini".format(globs.confPath, source))
+    if kwargs['qua']:
+        if len(kwargs['qualReq']) == 1:
+            kwargs = popBad('float(qua) < float(qualReq[0])', **kwargs)
+        else:
+            kwargs = popBad('qua not in qualReq', **kwargs)
 
-    qualReq = conf['quality']['qual'].split()
-    zeros = getZeroPoints(conf)
+    return kwargs
 
-    if len(qualReq) > 1:
-        for qua in reversed(qual):
-            if qua not in qualReq:
-                index = qual.index(qua)
-                data.pop(index)
-                waves.pop(index)
-                if zeros:
-                    zeros.pop(index)
-    elif len(qualReq) == 0:
-        return data, waves, zeros
+def popBad(cond, **kwargs):
+    """
+        Removes wavelengths and zeropoints for data that do not satisfy quality
+        flags. Also removes data with errors larger than the actual data, data
+        which is negative and has units not equivalent to magnitudes and nan's.
+
+        Parameters
+        ----------
+                cond : string
+                A string with the condition defining the type of quality flag
+                the data has.
+
+                **kwargs : dictionary
+                A dictionary of the parameters for the data reduction.
+
+        Returns
+        ----------
+                **kwargs : dictionary
+                A dictionary of the parameters for the data reduction.
+    """
+    qualReq = kwargs['qualReq']
+    qual = kwargs['qua']
+
+    errCond = "kwargs['fluxes'][index].value.s > kwargs['fluxes'][index].value.n"
+    negCond = "(kwargs['fluxes'][index].value.n < 0) & (not kwargs['fluxes'][index].unit.is_equivalent(u.mag))"
+    nanCond = "np.isnan(kwargs['fluxes'][index].value.n)"
+
+    for qua in reversed(qual):
+        index = qual.index(qua)
+        if (eval(cond)) or (eval(errCond)) or (eval(negCond)) or (eval(nanCond)):
+            pops = ['fluxes', 'wave', 'zero']
+
+            for pop in pops:
+                if kwargs[pop]:
+                    kwargs[pop].pop(index)
+
+    return kwargs
+
+def convertFluxes(**kwargs):
+    """
+        Function that uses the uc module to convert the data to spectral flux
+        densities (erg/s/cm**2).
+
+        Parameters
+        ----------
+                **kwargs : dictionary
+                A dictionary of the parameters for the data reduction.
+
+        Returns
+        ----------
+                **kwargs : dictionary
+                A dictionary of the parameters for the data reduction.
+    """
+    wave = kwargs['wave']
+    fluxes = kwargs['fluxes']
+    zero = kwargs['zero']
+
+    if zero:
+        new_fluxes = [uc.convert(f, w, z) for f, w, z in zip(fluxes, wave, zero)]
     else:
-        for qua in reversed(qual):
-            if float(qua) < float(qualReq[0]):
-                index = qual.index(qua)
-                data.pop(index)
-                waves.pop(index)
-                if zeros:
-                    zeros.pop(index)
+        new_fluxes = [uc.convert(f, w) for f, w in zip(fluxes, wave)]
 
-    return data, waves, zeros
+    kwargs['fluxes'] = new_fluxes
+
+    return kwargs
