@@ -20,8 +20,7 @@ dirLog = "data/logfiles/"
 masterLog = "master.log"
 confPath = "sedclient/config/"
 
-#phSources = [f.replace('.ini', '') for f in os.listdir(confPath) if os.path.isfile(os.path.join(confPath, f))]
-phSources = ['2mass']
+phSources = [f.replace('.ini', '') for f in os.listdir(confPath) if os.path.isfile(os.path.join(confPath, f))]
 specSources=['iso']
 
 logFormat = logging.Formatter("%(asctime)-15s ; %(levelname)s ; Mod: %(module)-5s ; LN: %(lineno)d ; %(message)s", "%Y-%m-%d %H:%M:%S")

@@ -8,13 +8,13 @@ def main():
     """
         testing function
     """
-    globs.name = 'minkowski'
-    globs.ra = '19 36 18.91'
-    globs.dec = '+29 32 50.03'
+    globs.name = 'red rect'
+    globs.ra = '06 19 58.2'
+    globs.dec = '-10 38 14.69'
     globs.l = 122.0483
     globs.b = -4.5325
     from uncertainties import ufloat
-    globs.ebv = ufloat(0.04,0.01)
+    globs.ebv = ufloat(0.00,0.01)
 
     makeSED.make()
 

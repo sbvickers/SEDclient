@@ -35,7 +35,7 @@ def loadPh(source):
         wave = [float(w) for w in conf[source]['wave'].split()]
         fluxVec = [float(f) for f in conf[source]['fluxes'].split()]
     except KeyError as e:
-        # logger.info("No {} data found for {}.".format(source, name))
+        globs.logger.info("No {} data found for {}.".format(source, name))
         return None, None
 
     flux = fluxVec[0::2]

@@ -50,13 +50,13 @@ def downPh(source):
 
         kwargs['fluxes'] = list(dr.dered(kwargs['wave'], kwargs['fluxes'], globs.ebv))
 
-        debugPrint(source, **kwargs)
+        #debugPrint(source, **kwargs)
 
         ds.savePh(kwargs['fluxes'], kwargs['wave'], source)
 
         return kwargs['wave'], kwargs['fluxes']
 
-    globs.logger.info("no {} photometric data found for {}.".format(source, name))
+    globs.logger.info("no {} photometric data found for {}.".format(source, globs.name))
 
     return None, None
 
@@ -136,7 +136,7 @@ def downSp(source):
     TDT = getTDT(result)
 
     if not TDT:
-        # logger.info("No ISO spectra found for {}".format(name))
+        globs.logger.info("No ISO spectra found for {}".format(name))
         return None, None
 
     if len(TDT) != 8:
@@ -145,7 +145,7 @@ def downSp(source):
     filename = "http://irsa.ipac.caltech.edu/data/SWS/spectra/sws/{}_sws.txt".format(TDT)
 
     wave, flux = getISO(filename)
-    
+
     flux = list(dr.dered(wave, flux, globs.ebv))
 
     ds.saveSp(wave, flux, source)
@@ -177,7 +177,7 @@ def getISO(filename):
     for line in f.readlines():
         data = [value for value in line.split()]
         if data[1] > 0:
-            wave.append(data[0] * u.um)
+            wave.append(float(data[0]))
             flux.append(uc.convert(ufloat(data[1], data[2]) * u.Jy, data[0]))
 
     f.close()
@@ -366,7 +366,7 @@ def checkUnits(**kwargs):
     units = kwargs['units']
 
     if len(units) == 1:
-        if units[0].is_equvalent(u.mag):
+        if units[0].is_equivalent(u.mag):
             p_data = [0.1 for d in fluxes] 
         else:
             p_data = [0.1 * d for d in fluxes]
@@ -466,9 +466,11 @@ def popBad(cond, **kwargs):
     qualReq = kwargs['qualReq']
     qual = kwargs['qua']
 
-    errCond = "kwargs['fluxes'][index].value.s > kwargs['fluxes'][index].value.n"
+    errCond = "kwargs['fluxes'][index].value.s > abs(kwargs['fluxes'][index].value.n)"
     negCond = "(kwargs['fluxes'][index].value.n < 0) & (not kwargs['fluxes'][index].unit.is_equivalent(u.mag))"
     nanCond = "np.isnan(kwargs['fluxes'][index].value.n)"
+
+    conds = [cond, errCond, negCond, nanCond]
 
     for qua in reversed(qual):
         index = qual.index(qua)

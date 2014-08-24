@@ -85,6 +85,7 @@ def openLogger():
     # adds new logging file to logger
     globs.logger.addHandler(globs.objectHandler)
 
+    globs.logger.info("************************************************")
     globs.logger.info("Building SED for {}, added objectHandler to logger.".format(globs.name))
 
 def closeLogger():
@@ -100,5 +101,6 @@ def closeLogger():
                 None
     """
     globs.logger.info("Finished building SED for {}, and removed objectHandler from logger.".format(globs.name))
+    globs.logger.info("************************************************")
 
     globs.logger.removeHandler(globs.objectHandler)

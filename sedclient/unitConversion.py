@@ -4,6 +4,7 @@
 """
 
 from astropy import units as u
+import globs
 
 c = 2.9979246e10 * u.cm / u.s
 cgsBase = [u.g,u.cm,u.s]
@@ -35,14 +36,14 @@ def convert(val, wave, zero=None):
     try:
         val.value, val.value.n
     except AttributeError as e:
-        # logger.warning("Value could not be converted.")
+        globs.logger.warning("Value could not be converted.")
         return val
 
     if (val.unit == u.mag):
         if zero:
             val = magConversion(val, wave, zero)
         else:
-            # logger.warning("Flux zero point required for magnitude conversion.")
+            globs.logger.warning("Flux zero point required for magnitude conversion.")
             return val
 
     if (not val.unit.decompose(bases=cgsBase).is_equivalent(u.g/u.s**2)):
@@ -160,7 +161,7 @@ def toJansky(val, wave):
     try:
         frac = unit.index('/')
     except ValueError as e:
-        #logger.warning("Check units they don't seem to be in spectral flux density units")
+        globs.logger.warning("Check units they don't seem to be in spectral flux density units")
         return val
     
     top = unit[:frac]

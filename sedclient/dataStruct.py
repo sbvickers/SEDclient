@@ -31,10 +31,6 @@ def buildPhStruct():
     else:
         data = downSource(data, dw.downPh, globs.phSources)
 
-    for key in data:
-        if data[key]['flux']:
-            data[key]['flux'] = list(dr.dered(data[key]['wave'], data[key]['flux'], globs.ebv))
-
     return data
 
 def loadSource(data, func, sources):
@@ -110,9 +106,5 @@ def buildSpStruct():
         data = loadSource(data, dl.loadSp, globs.specSources)
     else:
         data = downSource(data, dw.downSp, globs.specSources)
-
-    for key in data:
-        if data[key]['flux']:
-            data[key]['flux'] = list(dr.dered(data[key]['wave'], data[key]['flux'], globs.ebv))
 
     return data

@@ -67,7 +67,7 @@ def saveSp(wave, flux, source):
         if flux:
             for w, f in zip(wave, flux):
                 dataStr = "{:.3F}, {:.3E}, {:.3E} \n"
-                data = [w.scale, f.value.n, f.value.s]
+                data = [w, f.value.n, f.value.s]
                 saveFile.write(dataStr.format(*data))
 
     globs.logger.info("ISO data saved for {}.".format(globs.name))
