@@ -35,3 +35,12 @@ masterHandler.setFormatter(fmt=logFormat)
 logger.addHandler(masterHandler)
 
 objectHandler = None
+
+def kill_logger():
+    """
+        Kills/enables the logger.
+    """
+    if logger.disabled:
+        logger.disabled = False
+    else:
+        logger.disabled = True

@@ -41,7 +41,7 @@ def convert(val, wave, zero=None):
 
     if (val.unit == u.mag):
         if zero:
-            val = magConversion(val, wave, zero)
+            val = magConversion(val, zero)
         else:
             globs.logger.warning("Flux zero point required for magnitude conversion.")
             return val
@@ -270,7 +270,7 @@ def JyConversion(val, wave):
 
     return cgsFlux.value * cgsFlux.unit.scale * (u.erg/u.s/u.cm**2)
 
-def magConversion(val, wave, zero):
+def magConversion(val, zero):
     """
         Converts magnitudes into Janskys with an error.
 
@@ -278,10 +278,6 @@ def magConversion(val, wave, zero):
         ----------
                 val : ufloat, astropy.units object.
                 The magnitude to be converted into Janskys.
-
-                wave : float
-                Wavelength required for magnitude conversion and from Jy to
-                erg/s/cm**2.
 
                 zero : float
                 Flux at zero magnitude for the magnitude scale.
